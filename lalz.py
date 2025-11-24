@@ -178,9 +178,10 @@ def process_sql_file(file_path, output_dir="query_outputs"):
                     query_text = ' '.join(cleaned_lines)
                     
                     # Join with comma and newline for each item to appear on separate line in CSV cell
-                    table_names = ',\n'.join(tables)
-                    join_conds = ',\n'.join(join_conditions) if join_conditions else 'No JOIN conditions'
-                    where_conds = ',\n'.join(where_conditions) if where_conditions else 'No WHERE conditions'
+                    # Filter out None values and convert all to strings
+                    table_names = ',\n'.join([str(t) for t in tables if t is not None])
+                    join_conds = ',\n'.join([str(j) for j in join_conditions if j is not None]) if join_conditions else 'No JOIN conditions'
+                    where_conds = ',\n'.join([str(w) for w in where_conditions if w is not None]) if where_conditions else 'No WHERE conditions'
                     
                     # Write data row
                     writer.writerow([query_text, table_names, join_conds, where_conds])
