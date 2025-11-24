@@ -37,7 +37,12 @@ python3 lalz.py your_file.sql
 
 ### Command Line with File Path
 ```bash
+# SQL or TXT files
 python3 lalz.py your_queries.sql
+python3 lalz.py your_queries.txt
+
+# CSV files
+python3 lalz.py your_queries.csv
 ```
 
 ### Interactive Mode
@@ -46,10 +51,19 @@ python3 lalz.py
 # Then enter the file path when prompted
 ```
 
-### Input File Format
+### Input File Formats
+
+#### SQL/TXT Files
 - Supports `.sql` or `.txt` files
 - Multiple queries should be separated by semicolons (`;`)
 - Comments (`--`) are automatically removed from output
+
+#### CSV Files
+- Supports `.csv` files
+- Each cell can contain one or multiple SQL queries
+- Multiple queries in a cell should be separated by semicolons (`;`)
+- All rows and columns are processed
+- Each query is tracked with its location (Row X, Col Y)
 
 ## Output
 
@@ -63,8 +77,9 @@ The script creates a `query_outputs/` directory containing:
 3. **JOIN Conditions** - All JOIN conditions (comma + newline separated)
 4. **WHERE Conditions** - All WHERE conditions (comma + newline separated)
 
-## Example
+## Examples
 
+### Example 1: SQL File
 ```bash
 python3 lalz.py sample_queries.sql
 ```
@@ -76,6 +91,28 @@ Found 6 queries in the file
 ✓ Exported to: query_outputs/sample_queries_query_1_20251125_120000.csv
 ✓ All CSV files saved to: query_outputs/
 ```
+
+### Example 2: CSV File
+```bash
+python3 lalz.py sample_input.csv
+```
+
+Output:
+```
+Found 13 queries in the file
+
+### QUERY 1 ###
+Location: Row 2, Col 1
+Query: SELECT customer_id, customer_name FROM customers WHERE status = 'active';
+...
+Tables: ['customer_id', 'customer_name', 'customers', 'status']
+JOIN Conditions: []
+WHERE Conditions: ["status = 'active';"]
+✓ Exported to: query_outputs/sample_input_query_1_20251125_120000.csv
+...
+```
+
+**Note**: CSV files show the location (Row, Column) for each query found.
 
 ## Features in Detail
 

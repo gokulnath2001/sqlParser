@@ -116,17 +116,54 @@ def extract_sql_info(sql_query):
 
     return tables, columns, join_conditions, conditions, has_union
 
-def process_sql_file(file_path, output_dir="query_outputs"):
-    """Read SQL file and process each query separately"""
+def process_csv_file(file_path, output_dir="query_outputs"):
+    """Read CSV file and process queries from each cell"""
     try:
-        with open(file_path, 'r') as file:
-            content = file.read()
+        all_queries = []
         
-        # Split queries using sqlparse (handles semicolons properly)
-        statements = sqlparse.split(content)
+        with open(file_path, 'r', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile)
+            for row_idx, row in enumerate(reader, 1):
+                for col_idx, cell in enumerate(row, 1):
+                    if cell.strip():
+                        # Split queries in this cell
+                        cell_queries = sqlparse.split(cell)
+                        for query in cell_queries:
+                            query = query.strip()
+                            if query:
+                                # Store query with its location
+                                all_queries.append({
+                                    'query': query,
+                                    'location': f"Row {row_idx}, Col {col_idx}"
+                                })
         
-        # Filter out empty statements
-        queries = [stmt.strip() for stmt in statements if stmt.strip()]
+        return all_queries
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return []
+
+def process_sql_file(file_path, output_dir="query_outputs"):
+    """Read SQL/TXT/CSV file and process each query separately"""
+    try:
+        # Check file extension
+        file_ext = os.path.splitext(file_path)[1].lower()
+        
+        if file_ext == '.csv':
+            # Process CSV file
+            query_data = process_csv_file(file_path, output_dir)
+            queries = [q['query'] for q in query_data]
+            query_locations = [q['location'] for q in query_data]
+        else:
+            # Process SQL/TXT file
+            with open(file_path, 'r') as file:
+                content = file.read()
+            
+            # Split queries using sqlparse (handles semicolons properly)
+            statements = sqlparse.split(content)
+            
+            # Filter out empty statements
+            queries = [stmt.strip() for stmt in statements if stmt.strip()]
+            query_locations = [None] * len(queries)  # No location info for SQL files
         
         # Create output directory if it doesn't exist
         if not os.path.exists(output_dir):
@@ -140,7 +177,10 @@ def process_sql_file(file_path, output_dir="query_outputs"):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         for idx, query in enumerate(queries, 1):
+            location = query_locations[idx - 1]
             print(f"\n### QUERY {idx} ###")
+            if location:
+                print(f"Location: {location}")
             print(f"Query Preview: {query[:100]}..." if len(query) > 100 else f"Query: {query}")
             print("-" * 80)
             
