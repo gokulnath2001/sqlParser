@@ -18,30 +18,34 @@ def extract_sql_info(sql_query):
         """Recursively extract tables from tokens"""
         for token in tokens:
             if isinstance(token, sqlparse.sql.Identifier):
-                # Get the full table name (including schema if present)
-                # Check if it has schema.table format
-                token_str = str(token).split()[0]  # Get first part (before alias)
-                
-                # Use get_real_name() which returns just the table name
-                table_name = token.get_real_name()
-                
-                # Check if the original token has schema prefix
-                if '.' in token_str and not token.has_alias():
-                    # This is schema.table without alias
-                    full_table_name = token_str
-                elif '.' in token_str and token.has_alias():
-                    # This is schema.table with alias - extract schema.table part
-                    full_table_name = token_str
-                else:
-                    # No schema, just table name
-                    full_table_name = table_name
-                
-                tables.append(full_table_name)
+                # Get the full token string
+                token_str = str(token).strip()
                 
                 # Check if there's an alias
                 if token.has_alias():
                     alias = token.get_alias()
+                    # Get the real table name (without alias)
+                    table_name = token.get_real_name()
+                    
+                    # Check if it has schema.table format by looking at the token structure
+                    # token_str format: "schema.table alias" or "table alias"
+                    # We need to extract everything before the alias
+                    if ' ' in token_str:
+                        # Split by spaces and remove the last part (alias)
+                        parts = token_str.rsplit(None, 1)  # Split from right, max 1 split
+                        if len(parts) == 2:
+                            full_table_name = parts[0]  # Everything before the alias
+                        else:
+                            full_table_name = table_name
+                    else:
+                        full_table_name = table_name
+                    
                     alias_to_table[alias] = full_table_name
+                else:
+                    # No alias - use the full token string as-is
+                    full_table_name = token_str
+                
+                tables.append(full_table_name)
             elif hasattr(token, 'tokens'):
                 # Recursively search nested tokens (for UNION queries)
                 extract_from_tokens(token.tokens)
